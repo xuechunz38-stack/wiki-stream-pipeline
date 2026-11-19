@@ -91,13 +91,13 @@ def live():
         long = s.melt("window_start", ["edits", "expected_edits"], var_name="series", value_name="value")
         long["series"] = long["series"].map({"edits": "actual", "expected_edits": "EWMA forecast"})
         lines = alt.Chart(long).mark_line(point=False).encode(
-            x=alt.X("window_start:T", title="minute (UTC)"),
+            x=alt.X("utchoursminutes(window_start):T", title="minute (UTC)", axis=alt.Axis(format="%H:%M")),
             y=alt.Y("value:Q", title="edits / minute"),
             color=alt.Color("series:N", scale=alt.Scale(range=["#3366cc", "#ff9900"])),
             strokeDash=alt.condition("datum.series == 'EWMA forecast'", alt.value([5, 4]), alt.value([0])),
             tooltip=["window_start:T", "series:N", alt.Tooltip("value:Q", format=".1f")])
         pts = alt.Chart(s[s.is_anomaly]).mark_point(color="red", size=160, filled=True).encode(
-            x="window_start:T", y="edits:Q", tooltip=["window_start:T", "edits:Q"])
+            x="utchoursminutes(window_start):T", y="edits:Q", tooltip=["window_start:T", "edits:Q"])
         st.altair_chart((lines + pts).properties(height=260), use_container_width=True)
         st.caption("Each closed 1-minute window is compared with the forecast made before it closed; "
                    "red dots = spike alerts (z ≥ 3.5).")
@@ -121,7 +121,7 @@ def live():
             b["bytes_removed"] = -b["bytes_removed"]
             bl = b.melt("window_start", ["bytes_added", "bytes_removed"], var_name="kind", value_name="bytes")
             st.altair_chart(alt.Chart(bl).mark_bar().encode(
-                x=alt.X("window_start:T", title="minute (UTC)"), y=alt.Y("bytes:Q", title="bytes"),
+                x=alt.X("utchoursminutes(window_start):T", title="minute (UTC)", axis=alt.Axis(format="%H:%M")), y=alt.Y("bytes:Q", title="bytes"),
                 color=alt.Color("kind:N", scale=alt.Scale(range=["#54a24b", "#e45756"])),
                 tooltip=["window_start:T", "kind", "bytes"]).properties(height=330), use_container_width=True)
 

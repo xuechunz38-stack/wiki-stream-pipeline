@@ -1,0 +1,26 @@
+$ kafka-topics.sh --describe
+Topic: wikipedia.edits	TopicId: NY2aDuWXSgKe2HgqBMi8aw	PartitionCount: 3	ReplicationFactor: 1	Configs: 
+	Topic: wikipedia.edits	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: wikipedia.edits	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: wikipedia.edits	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: wikipedia.edit-alerts	TopicId: o8kML5VET-OSNx2jssEncA	PartitionCount: 1	ReplicationFactor: 1	Configs: 
+	Topic: wikipedia.edit-alerts	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+
+$ kafka-consumer-groups.sh --describe --all-groups
+GROUP                TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                  HOST            CLIENT-ID
+wiki-edits-analytics wikipedia.edits 1          352             364             12              rdkafka-e3eee5ad-3f5f-43f9-92dd-2c35ca8167d4 /172.21.0.4     rdkafka
+wiki-edits-analytics wikipedia.edits 0          127             134             7               rdkafka-e3eee5ad-3f5f-43f9-92dd-2c35ca8167d4 /172.21.0.4     rdkafka
+wiki-edits-analytics wikipedia.edits 2          134             140             6               rdkafka-e3eee5ad-3f5f-43f9-92dd-2c35ca8167d4 /172.21.0.4     rdkafka
+GROUP                TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                  HOST            CLIENT-ID
+wiki-edits-db-writer wikipedia.edits 1          362             364             2               rdkafka-43b6c734-b3c2-4318-a392-d5bc7d457b19 /172.21.0.5     rdkafka
+wiki-edits-db-writer wikipedia.edits 0          133             134             1               rdkafka-43b6c734-b3c2-4318-a392-d5bc7d457b19 /172.21.0.5     rdkafka
+wiki-edits-db-writer wikipedia.edits 2          140             140             0               rdkafka-43b6c734-b3c2-4318-a392-d5bc7d457b19 /172.21.0.5     rdkafka
+
+$ kafka-console-consumer.sh --topic wikipedia.edits --max-messages 2 --property print.key=true
+enwiki	{"event_id": "a537393a-e9ed-49fc-a595-2056504b5a2d", "rc_id": 2092063077, "event_time": "2026-11-19T19:41:34+00:00", "wiki": "enwiki", "language": "en", "edit_type": "edit", "namespace": 3, "title": "User talk:ZhangZhuhua2026", "is_bot": false, "is_minor": false, "is_anonymous": false, "old_length": 7283, "new_length": 7940, "bytes_change": 657}
+frwiki	{"event_id": "c0e3b37a-1715-450f-b73b-3b6da292fa40", "rc_id": 587282561, "event_time": "2026-11-19T19:41:34+00:00", "wiki": "frwiki", "language": "fr", "edit_type": "edit", "namespace": 0, "title": "March\u00e9 de Sorgues", "is_bot": false, "is_minor": true, "is_anonymous": false, "old_length": 4681, "new_length": 4676, "bytes_change": -5}
+
+$ kafka-console-consumer.sh --topic wikipedia.edit-alerts --from-beginning --max-messages 3
+{"alert_type": "large_addition", "wiki": "srwiki", "event_time": "2026-11-19T19:40:09+00:00", "value": 36117, "expected": null, "zscore": null, "detail": "+36,117 bytes on \"\u041d\u0430\u0458\u0441\u043a\u043e\u0440\u0438\u0458\u0438 \u0437\u0430\u0458\u0435\u0434\u043d\u0438\u0447\u043a\u0438 \u043f\u0440\u0435\u0434\u0430\u043a\""}
+{"alert_type": "large_removal", "wiki": "enwiki", "event_time": "2026-11-19T19:40:25+00:00", "value": -52736, "expected": null, "zscore": null, "detail": "-52,736 bytes on \"Knuckles the Echidna\""}
+{"alert_type": "large_addition", "wiki": "enwiki", "event_time": "2026-11-19T19:40:29+00:00", "value": 52736, "expected": null, "zscore": null, "detail": "+52,736 bytes on \"Knuckles the Echidna\""}

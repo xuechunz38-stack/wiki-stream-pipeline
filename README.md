@@ -1,6 +1,6 @@
 # Wikipedia Live Edits — a real-time Kafka pipeline
 
-**Live dashboard:** DASHBOARD_URL_PLACEHOLDER
+**Live dashboard:** https://wiki-live-edits.streamlit.app/
 
 Every few seconds, people and bots around the world edit Wikipedia. This project streams those edits
 **live** from Wikimedia's public event feed into **Apache Kafka**, stores them in **Postgres** (Supabase),
@@ -157,7 +157,45 @@ shows the format.
 
 ## Outcome
 
-RESULTS_PLACEHOLDER
+Results from a run on Nov 19, 2026 (19:39–19:53 UTC), pipeline on a laptop, database on Supabase,
+dashboard on Streamlit Community Cloud:
+
+| | |
+|---|---|
+| Raw Wikimedia changes read by the producer | ~27,000 (all projects) |
+| Wikipedia edits published to `wikipedia.edits` | **4,682** (~6 per second), 0 delivery failures |
+| Rows in `wiki_edits` (Supabase) | 4,134 after 11.5 min, growing every second |
+| Distinct Wikipedias seen | **88** |
+| Rows in `edit_stats_minute` | 481 (one per wiki per minute, plus `_all`) |
+| Alerts | 22 in the first ~15 min (`large_addition` / `large_removal`) |
+| Consumer lag | 0–12 messages per partition for both groups |
+
+**What the data showed**
+
+* About **30 % of all edits are made by bots** and ~6 % by logged-out users; ~230 new articles per hour.
+* English Wikipedia dominates (≈1,600 edits in 15 min), followed by a long tail; Tatar Wikipedia (`ttwiki`)
+  was almost entirely bot traffic during the run, which the human-vs-bot chart makes obvious.
+* The large-edit rule caught real events within seconds, e.g. **−52,732 bytes on "Knuckles the Echidna"
+  followed by +52,732 four seconds later** (a page blanking and its revert), a bot archiving 30 kB of
+  "Talk:United Church of Canada", and several 25–83 kB additions on Armenian and Ukrainian Wikipedia.
+* The EWMA model started from a partial first minute (73 edits), so the forecast began low and converged
+  to the real rate (~330 vs. ~340–390 edits/min) within ~8 windows; z-scores then stayed below 1, so no
+  false `edit_spike` alerts were raised for the global series. The 10-window warm-up exists exactly
+  for this cold start.
+
+**Screenshots of the deployed dashboard**
+
+![KPIs and EWMA forecast](docs/screenshots/1_kpis_and_ewma_forecast.jpg)
+![Top wikis and bytes](docs/screenshots/2_top_wikis_and_bytes.jpg)
+![Page types, edit sizes, alerts](docs/screenshots/3_page_types_sizes_alerts.jpg)
+![Alerts and recent edits](docs/screenshots/4_alerts_and_recent_edits.jpg)
+
+Kafka evidence (topics, both consumer groups with offsets/lag, keyed messages, alert topic) is in
+[`docs/kafka_evidence.txt`](docs/kafka_evidence.txt); service logs in [`docs/pipeline_logs.txt`](docs/pipeline_logs.txt).
+
+**Limitations / next steps:** single Kafka broker (no replication); the processor keeps window state in
+memory (a crash loses the current minute — Flink or Kafka Streams would checkpoint it); raw events are
+kept 6 h to stay inside the Supabase free tier.
 
 ## Repository layout
 
